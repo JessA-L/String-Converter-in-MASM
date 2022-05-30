@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
+Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 12:55:48
 <Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALL  Page 1 - 1
 
 
@@ -32,7 +32,36 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
 			      C .LIST
 			      C 
 
-				; (insert macro definitions here)
+				; ---------------------------------------------------------------------------------
+				; Name: mGetString
+				;
+				; Display a prompt (input parameter, by reference), then get the user’s keyboard 
+				;	input using ReadString, in the form of a string of digits, into a memory location. 
+				;
+				; Preconditions: do not use eax, ecx, esi as arguments
+				;
+				; Receives:
+				;	prompt
+				;	userInput = array address
+				;	stringSize = array length
+				;
+				; returns: stringAddr = generated string address
+				; ---------------------------------------------------------------------------------
+
+				; ---------------------------------------------------------------------------------
+				; Name: mDisplayString
+				;
+				; Print the string stored in a specified memory location using WriteString.
+				;
+				; Preconditions: 
+				;	do not use eax, ecx, esi as arguments
+				;	stringAddress has been pushed to stack
+				;
+				; Receives:
+				;	stringAddress - contains string to be printed
+				;
+				; returns: none
+				; ---------------------------------------------------------------------------------
 
 				; (insert constant definitions here)
 
@@ -56,19 +85,80 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
 	   4C 61 50 6F 72
 	   74 65 0D 0A 0D
 	   0A 00
-				; TODO: Update description
- 00000057 44 45 53 43 52	intro2				BYTE	"DESCRIPTION LINE 1",13,10
-	   49 50 54 49 4F
-	   4E 20 4C 49 4E
-	   45 20 31 0D 0A
- 0000006B  44 45 53 43 52						BYTE	"DESCRIPTION LINE 2",13,10
-	   49 50 54 49 4F
-	   4E 20 4C 49 4E
-	   45 20 32 0D 0A
- 0000007F  44 45 53 43 52						BYTE	"DESCRIPTION LINE 3",13,10,0
-	   49 50 54 49 4F
-	   4E 20 4C 49 4E
-	   45 20 33 0D 0A
+ 00000057 49 6E 70 75 74	intro2				BYTE	"Input 10 signed decimal integers (positive or negative. or 0).",13,10
+	   20 31 30 20 73
+	   69 67 6E 65 64
+	   20 64 65 63 69
+	   6D 61 6C 20 69
+	   6E 74 65 67 65
+	   72 73 20 28 70
+	   6F 73 69 74 69
+	   76 65 20 6F 72
+	   20 6E 65 67 61
+	   74 69 76 65 2E
+	   20 6F 72 20 30
+	   29 2E 0D 0A
+ 00000097  45 61 63 68 20						BYTE	"Each number must fit inside a 32 bit register. After you've input the raw numbers,",13,10
+	   6E 75 6D 62 65
+	   72 20 6D 75 73
+	   74 20 66 69 74
+	   20 69 6E 73 69
+	   64 65 20 61 20
+	   33 32 20 62 69
+	   74 20 72 65 67
+	   69 73 74 65 72
+	   2E 20 41 66 74
+	   65 72 20 79 6F
+	   75 27 76 65 20
+	   69 6E 70 75 74
+	   20 74 68 65 20
+	   72 61 77 20 6E
+	   75 6D 62 65 72
+	   73 2C 0D 0A
+ 000000EB  74 68 65 20 70						BYTE	"the program will display a list of the integers, their sum, and their truncated mean.",13,10,0
+	   72 6F 67 72 61
+	   6D 20 77 69 6C
+	   6C 20 64 69 73
+	   70 6C 61 79 20
+	   61 20 6C 69 73
+	   74 20 6F 66 20
+	   74 68 65 20 69
+	   6E 74 65 67 65
+	   72 73 2C 20 74
+	   68 65 69 72 20
+	   73 75 6D 2C 20
+	   61 6E 64 20 74
+	   68 65 69 72 20
+	   74 72 75 6E 63
+	   61 74 65 64 20
+	   6D 65 61 6E 2E
+	   0D 0A 00
+ 00000143 50 6C 65 61 73	prompt1				BYTE	"Please enter a signed number: ",0
+	   65 20 65 6E 74
+	   65 72 20 61 20
+	   73 69 67 6E 65
+	   64 20 6E 75 6D
+	   62 65 72 3A 20
+	   00
+ 00000162 45 52 52 4F 52	error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10
+	   3A 20 59 6F 75
+	   20 64 69 64 20
+	   6E 6F 74 20 65
+	   6E 74 65 72 20
+	   61 6E 20 73 69
+	   67 6E 65 64 20
+	   6E 75 6D 62 65
+	   72 20 6F 72 20
+	   79 6F 75 72 20
+	   6E 75 6D 62 65
+	   72 20 77 61 73
+	   20 74 6F 6F 20
+	   62 69 67 2E 0D
+	   0A
+ 000001A9  50 6C 65 61 73						BYTE	"Please try again: ",13,10,0
+	   65 20 74 72 79
+	   20 61 67 61 69
+	   6E 3A 20 0D 0A
 	   00
 
  00000000			.code
@@ -77,6 +167,15 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
  00000000  68 00000000 R		PUSH	OFFSET intro1
  00000005  68 00000057 R		PUSH	OFFSET intro2
  0000000A  E8 00000007			CALL	introduction
+
+				; Write a test program which uses the ReadVal and WriteVal procedures to:
+				; Get 10 valid integers from the user. 
+				; - Your ReadVal will be called within the loop in main. 
+				; - Do not put your counted loop within ReadVal.
+				; Stores these numeric values in an array.
+				; Display the integers, their sum, and their truncated average.
+				; ** Your ReadVal will be called within the loop in main. 
+				; **  - Do not put your counted loop within ReadVal.
 
 					Invoke ExitProcess,0	; exit to operating system
  0000000F  6A 00	   *	    push   +000000000h
@@ -105,9 +204,60 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
  0000002E  5D				POP		EBP
  0000002F  C2 0008			RET		8
  00000032			introduction ENDP
+				; ---------------------------------------------------------------------------------
+				; Name: ReadVal
+				;
+				; Invokes the mGetString macro to get user input, converts the string of ascii 
+				;	digits to its numeric value representation, and stores this one value in a 
+				;	memory variable. 
+				;
+				; Preconditions: the array contains a string of ascii digits.
+				;
+				; Postconditions: 
+				;
+				; Receives:
+				;
+				; returns: 
+				; ---------------------------------------------------------------------------------
+
+				; Read the user's input as a string and convert the string to numeric form.
+				; - Invoke the mGetString macro (see parameter requirements above) to get user input 
+				;	in the form of a string of digits.
+
+				; Convert (using string primitives LODSB and/or STOSB) the string of ascii digits to 
+				; its numeric value representation (SDWORD), validating the user’s input is a valid 
+				; number (no letters, symbols, etc).
+				;	 - If the user enters non-digits other than something which will indicate sign 
+				;		(e.g. ‘+’ or ‘-‘), or the number is too large for 32-bit registers, 
+				;		an error message should be displayed and the number should be discarded.
+				;	 - If the user enters nothing (empty input), display an error and re-prompt.
+
+
+				; Store this one value in a memory variable (output parameter, by reference). 
+
+
+				; ---------------------------------------------------------------------------------
+				; Name: WriteVal
+				;
+				; Converts a numeric SDWORD value to a string of ASCII digits and invokes the 
+				; mDisplayString macro to print the ASCII representation of the value to the output.
+				;
+				; Preconditions: 
+				;
+				; Postconditions: 
+				;
+				; Receives:
+				;
+				; returns: 
+				; ---------------------------------------------------------------------------------
+
+				; Convert a numeric SDWORD value (input parameter, by value) to a string of ASCII digits.
+
+				; Invoke the mDisplayString macro to print the ASCII representation of the SDWORD value 
+				;	to the output.
 
 				END main
-Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
+Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 12:55:48
 <Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALL  Symbols 2 - 1
 
 
@@ -201,7 +351,7 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 00000094 Para	  Public  'DATA'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001BE Para	  Public  'DATA'	
 _TEXT  . . . . . . . . . . . . .	32 Bit	 00000032 Para	  Public  'CODE'	
 
 
@@ -533,6 +683,7 @@ black  . . . . . . . . . . . . .	Number	 00000000h
 blue . . . . . . . . . . . . . .	Number	 00000001h   
 brown  . . . . . . . . . . . . .	Number	 00000006h   
 cyan . . . . . . . . . . . . . .	Number	 00000003h   
+error_mess . . . . . . . . . . .	Byte	 00000162 _DATA	
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
@@ -545,6 +696,7 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
+prompt1  . . . . . . . . . . . .	Byte	 00000143 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
