@@ -27,10 +27,10 @@ INCLUDE Irvine32.inc
 ; returns: stringAddr = generated string address
 ; ---------------------------------------------------------------------------------
 mGetString MACRO 
-	LOCAL prompt1
-  .data
-	prompt1				BYTE	"Please enter a signed number: ",0
-  .code
+;	LOCAL prompt1
+;  .data
+;	prompt1				BYTE	"Please enter a signed number: ",0
+;  .code
 	PUSH	EDX
 	MOV		EDX, OFFSET prompt1
 	CALL	WriteString
@@ -38,10 +38,13 @@ mGetString MACRO
 	MOV		EDX, OFFSET int_string		; EDX = address of int_string
 	MOV		ECX, SIZEOF	int_string		; ECX = int_string size
 	CALL	ReadString					; gets int_string
+	MOV		s_len, EAX
 
 	CALL	CrLf
 
-	CALL	WriteString					; TEST print
+;	CALL	WriteString					; TEST print string
+;	CALL	CrLf
+;	CALL	WriteDec					; TEST print length
 
 	POP		EDX
 ENDM
@@ -69,10 +72,13 @@ intro1				BYTE	"Project 6: Fun with Low-Level I/O Procedures & Macros! - by Jess
 intro2				BYTE	"Input 10 signed decimal integers (positive or negative. or 0).",13,10
 					BYTE	"Each number must fit inside a 32 bit register. After you've input the raw numbers,",13,10
 					BYTE	"the program will display a list of the integers, their sum, and their truncated mean.",13,10,0
-
+prompt1				BYTE	"Please enter a signed number: ",0
 error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10
 					BYTE	"Please try again: ",13,10,0
-int_string			BYTE	12 DUP(0)
+int_string			BYTE	21 DUP(0)
+s_len				DWORD	?
+num_int				SDWORD	0
+num_char			SDWORD	?
 
 .code
 main PROC
@@ -133,12 +139,14 @@ introduction ENDP
 ; returns: 
 ; ---------------------------------------------------------------------------------
 readVal PROC
-	PUSH	EBP						; Step 1) Preserve EBP
-	MOV		EBP, ESP				; Step 2) Assign static stack-frame pointer
+	PUSH	EBP						
+	MOV		EBP, ESP				
+
 ; Read the user's input as a string and convert the string to numeric form.
 ; - Invoke the mGetString macro (see parameter requirements above) to get user input 
 ;	in the form of a string of digits.
 	mGetString 
+	CALL	CrLf
 
 ; Convert (using string primitives LODSB and/or STOSB) the string of ascii digits to 
 ; its numeric value representation (SDWORD), validating the user’s input is a valid 
@@ -148,6 +156,31 @@ readVal PROC
 ;		an error message should be displayed and the number should be discarded.
 ;	 - If the user enters nothing (empty input), display an error and re-prompt.
 
+;  num_int = 0
+
+	CLD								; sets direction flag (forward)
+	MOV		ECX, s_len
+;  get numString
+	MOV		ESI, OFFSET int_string
+_convert:
+
+;  for num_char in numString:
+;    if 48 <= num_char <= 57:
+;      num_int = 10 * num_int + (num_char - 48)
+;    else:
+;      break
+
+	LODSB							; AL = multiplicand
+	MOV		num_char, EAX
+	MOV		EAX, num_int
+	MOV		EBX, 10
+	IMUL	EBX						; 10 * num_int
+	ADD		EAX, num_char
+	SUB		EAX, 48
+	MOV		num_int, EAX
+
+	LOOP	_convert
+	
 
 ; Store this one value in a memory variable (output parameter, by reference). 
 
