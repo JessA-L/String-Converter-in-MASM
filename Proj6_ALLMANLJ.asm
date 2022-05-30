@@ -26,6 +26,12 @@ INCLUDE Irvine32.inc
 ;
 ; returns: stringAddr = generated string address
 ; ---------------------------------------------------------------------------------
+mGetString MACRO prompt
+	PUSH	EDX
+	MOV		EDX, OFFSET prompt1
+	CALL	WriteString
+	POP		EDX
+ENDM
 
 ; ---------------------------------------------------------------------------------
 ; Name: mDisplayString
@@ -60,6 +66,10 @@ main PROC
 	PUSH	OFFSET intro1
 	PUSH	OFFSET intro2
 	CALL	introduction
+
+	CALL	readVal
+
+
 
 ; Write a test program which uses the ReadVal and WriteVal procedures to:
 ; Get 10 valid integers from the user. 
@@ -96,7 +106,7 @@ introduction PROC
 	RET		8
 introduction ENDP
 ; ---------------------------------------------------------------------------------
-; Name: ReadVal
+; Name: readVal
 ;
 ; Invokes the mGetString macro to get user input, converts the string of ascii 
 ;	digits to its numeric value representation, and stores this one value in a 
@@ -110,11 +120,13 @@ introduction ENDP
 ;
 ; returns: 
 ; ---------------------------------------------------------------------------------
-
+readVal PROC
+	PUSH	EBP						; Step 1) Preserve EBP
+	MOV		EBP, ESP				; Step 2) Assign static stack-frame pointer
 ; Read the user's input as a string and convert the string to numeric form.
 ; - Invoke the mGetString macro (see parameter requirements above) to get user input 
 ;	in the form of a string of digits.
-
+	mGetString prompt1
 ; Convert (using string primitives LODSB and/or STOSB) the string of ascii digits to 
 ; its numeric value representation (SDWORD), validating the user’s input is a valid 
 ; number (no letters, symbols, etc).
@@ -126,7 +138,9 @@ introduction ENDP
 
 ; Store this one value in a memory variable (output parameter, by reference). 
 
-
+	POP		EBP
+	RET		8
+readVal	ENDP
 ; ---------------------------------------------------------------------------------
 ; Name: WriteVal
 ;
