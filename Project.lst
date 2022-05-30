@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
+Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 19:30:05
 <Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALL  Page 1 - 1
 
 
@@ -60,12 +60,6 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
 					MOV		ECX, SIZEOF	int_string		; ECX = int_string size
 					CALL	ReadString					; gets int_string
 					MOV		s_len, EAX
-
-					CALL	CrLf
-
-				;	CALL	WriteString					; TEST print string
-				;	CALL	CrLf
-				;	CALL	WriteDec					; TEST print length
 
 					POP		EDX
 				ENDM
@@ -162,7 +156,7 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
 	   64 20 6E 75 6D
 	   62 65 72 3A 20
 	   00
- 00000162 45 52 52 4F 52	error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10
+ 00000162 45 52 52 4F 52	error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10,0
 	   3A 20 59 6F 75
 	   20 64 69 64 20
 	   6E 6F 74 20 65
@@ -176,18 +170,13 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
 	   72 20 77 61 73
 	   20 74 6F 6F 20
 	   62 69 67 2E 0D
-	   0A
- 000001A9  50 6C 65 61 73						BYTE	"Please try again: ",13,10,0
-	   65 20 74 72 79
-	   20 61 67 61 69
-	   6E 3A 20 0D 0A
-	   00
- 000001BE  00000015 [		int_string			BYTE	21 DUP(0)
+	   0A 00
+ 000001AA  00000015 [		int_string			BYTE	21 DUP(0)
 	    00
 	   ]
- 000001D3 00000000		s_len				DWORD	?
- 000001D7 00000000		num_int				SDWORD	0
- 000001DB 00000000		num_char			SDWORD	?
+ 000001BF 00000000		s_len				DWORD	?
+ 000001C3 00000000		num_int				SDWORD	0
+ 000001C7 00000000		num_char			SDWORD	?
 
  00000000			.code
  00000000			main PROC
@@ -253,6 +242,7 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
  00000037  55				PUSH	EBP						
  00000038  8B EC			MOV		EBP, ESP				
 
+ 0000003A			_getNewString:
 				; Read the user's input as a string and convert the string to numeric form.
 				; - Invoke the mGetString macro (see parameter requirements above) to get user input 
 				;	in the form of a string of digits.
@@ -260,13 +250,12 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
  0000003A  52		     1		PUSH	EDX
  0000003B  BA 00000143 R     1		MOV		EDX, OFFSET prompt1
  00000040  E8 00000000 E     1		CALL	WriteString
- 00000045  BA 000001BE R     1		MOV		EDX, OFFSET int_string		; EDX = address of int_string
+ 00000045  BA 000001AA R     1		MOV		EDX, OFFSET int_string		; EDX = address of int_string
  0000004A  B9 00000015	     1		MOV		ECX, SIZEOF	int_string		; ECX = int_string size
  0000004F  E8 00000000 E     1		CALL	ReadString					; gets int_string
- 00000054  A3 000001D3 R     1		MOV		s_len, EAX
- 00000059  E8 00000000 E     1		CALL	CrLf
- 0000005E  5A		     1		POP		EDX
- 0000005F  E8 00000000 E		CALL	CrLf
+ 00000054  A3 000001BF R     1		MOV		s_len, EAX
+ 00000059  5A		     1		POP		EDX
+ 0000005A  E8 00000000 E		CALL	CrLf
 
 				; Convert (using string primitives LODSB and/or STOSB) the string of ascii digits to 
 				; its numeric value representation (SDWORD), validating the user’s input is a valid 
@@ -278,11 +267,11 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
 
 				;  num_int = 0
 
- 00000064  FC				CLD								; sets direction flag (forward)
- 00000065  8B 0D 000001D3 R		MOV		ECX, s_len
+ 0000005F  FC				CLD								; sets direction flag (forward)
+ 00000060  8B 0D 000001BF R		MOV		ECX, s_len
 				;  get numString
- 0000006B  BE 000001BE R		MOV		ESI, OFFSET int_string
- 00000070			_convert:
+ 00000066  BE 000001AA R		MOV		ESI, OFFSET int_string
+ 0000006B			_convert:
 
 				;  for num_char in numString:
 				;    if 48 <= num_char <= 57:
@@ -290,25 +279,38 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
 				;    else:
 				;      break
 
- 00000070  AC				LODSB							; AL = multiplicand
- 00000071  A3 000001DB R		MOV		num_char, EAX
- 00000076  A1 000001D7 R		MOV		EAX, num_int
- 0000007B  BB 0000000A			MOV		EBX, 10
- 00000080  F7 EB			IMUL	EBX						; 10 * num_int
-				;	IMUL	EAX, num_int
-				;	MOVZX	
- 00000082  03 05 000001DB R		ADD		EAX, num_char
- 00000088  83 E8 30			SUB		EAX, 48
- 0000008B  A3 000001D7 R		MOV		num_int, EAX
+ 0000006B  AC				LODSB							; AL = multiplicand
+ 0000006C  A3 000001C7 R		MOV		num_char, EAX
+ 00000071  83 3D 000001C7 R		CMP		num_char, 48
+	   30
+ 00000078  72 2C			JB		_error
+ 0000007A  83 3D 000001C7 R		CMP		num_char, 57
+	   39
+ 00000081  77 23			JA		_error
+ 00000083  A1 000001C3 R		MOV		EAX, num_int
+ 00000088  BB 0000000A			MOV		EBX, 10
+ 0000008D  F7 EB			IMUL	EBX						; 10 * num_int
+ 0000008F  03 05 000001C7 R		ADD		EAX, num_char
+ 00000095  83 E8 30			SUB		EAX, 48
+ 00000098  A3 000001C3 R		MOV		num_int, EAX
 
- 00000090  E2 DE			LOOP	_convert
+ 0000009D  E2 CC			LOOP	_convert
 					
+ 0000009F  E8 00000000 E		CALL	WriteInt
+ 000000A4  EB 19			JMP		_out
 
+ 000000A6			_error:
+ 000000A6  BA 00000162 R		MOV		EDX, OFFSET error_mess
+ 000000AB  E8 00000000 E		CALL	WriteString
+ 000000B0  C7 05 000001C3 R		MOV		num_int, 0
+	   00000000
+ 000000BA  E9 FFFFFF7B			JMP		_getNewString
+
+ 000000BF			_out:
 				; Store this one value in a memory variable (output parameter, by reference). 
-
- 00000092  5D				POP		EBP
- 00000093  C3				RET		
- 00000094			readVal	ENDP
+ 000000BF  5D				POP		EBP
+ 000000C0  C3				RET		
+ 000000C1			readVal	ENDP
 				; ---------------------------------------------------------------------------------
 				; Name: WriteVal
 				;
@@ -330,7 +332,7 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
 				;	to the output.
 
 				END main
-Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 18:49:04
+Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 19:30:05
 <Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALL  Symbols 2 - 1
 
 
@@ -431,8 +433,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 000001DF Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000094 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 000001CB Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000000C1 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -542,8 +544,11 @@ WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 introduction . . . . . . . . . .	P Near	 0000001B _TEXT	Length= 0000001C Public STDCALL
 main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 0000001B Public STDCALL
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
-readVal  . . . . . . . . . . . .	P Near	 00000037 _TEXT	Length= 0000005D Public STDCALL
-  _convert . . . . . . . . . . .	L Near	 00000070 _TEXT	
+readVal  . . . . . . . . . . . .	P Near	 00000037 _TEXT	Length= 0000008A Public STDCALL
+  _getNewString  . . . . . . . .	L Near	 0000003A _TEXT	
+  _convert . . . . . . . . . . .	L Near	 0000006B _TEXT	
+  _error . . . . . . . . . . . .	L Near	 000000A6 _TEXT	
+  _out . . . . . . . . . . . . .	L Near	 000000BF _TEXT	
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 
@@ -769,7 +774,7 @@ error_mess . . . . . . . . . . .	Byte	 00000162 _DATA
 exit . . . . . . . . . . . . . .	Text   	 INVOKE ExitProcess,0
 gray . . . . . . . . . . . . . .	Number	 00000008h   
 green  . . . . . . . . . . . . .	Number	 00000002h   
-int_string . . . . . . . . . . .	Byte	 000001BE _DATA	
+int_string . . . . . . . . . . .	Byte	 000001AA _DATA	
 intro1 . . . . . . . . . . . . .	Byte	 00000000 _DATA	
 intro2 . . . . . . . . . . . . .	Byte	 00000057 _DATA	
 lightBlue  . . . . . . . . . . .	Number	 00000009h   
@@ -779,11 +784,11 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
-num_char . . . . . . . . . . . .	DWord	 000001DB _DATA	
-num_int  . . . . . . . . . . . .	DWord	 000001D7 _DATA	
+num_char . . . . . . . . . . . .	DWord	 000001C7 _DATA	
+num_int  . . . . . . . . . . . .	DWord	 000001C3 _DATA	
 prompt1  . . . . . . . . . . . .	Byte	 00000143 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
-s_len  . . . . . . . . . . . . .	DWord	 000001D3 _DATA	
+s_len  . . . . . . . . . . . . .	DWord	 000001BF _DATA	
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA
 yellow . . . . . . . . . . . . .	Number	 0000000Eh   

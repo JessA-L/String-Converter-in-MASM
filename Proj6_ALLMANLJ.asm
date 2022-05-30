@@ -40,12 +40,6 @@ mGetString MACRO
 	CALL	ReadString					; gets int_string
 	MOV		s_len, EAX
 
-	CALL	CrLf
-
-;	CALL	WriteString					; TEST print string
-;	CALL	CrLf
-;	CALL	WriteDec					; TEST print length
-
 	POP		EDX
 ENDM
 
@@ -73,8 +67,7 @@ intro2				BYTE	"Input 10 signed decimal integers (positive or negative. or 0).",
 					BYTE	"Each number must fit inside a 32 bit register. After you've input the raw numbers,",13,10
 					BYTE	"the program will display a list of the integers, their sum, and their truncated mean.",13,10,0
 prompt1				BYTE	"Please enter a signed number: ",0
-error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10
-					BYTE	"Please try again: ",13,10,0
+error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10,0
 int_string			BYTE	21 DUP(0)
 s_len				DWORD	?
 num_int				SDWORD	0
@@ -142,6 +135,7 @@ readVal PROC
 	PUSH	EBP						
 	MOV		EBP, ESP				
 
+_getNewString:
 ; Read the user's input as a string and convert the string to numeric form.
 ; - Invoke the mGetString macro (see parameter requirements above) to get user input 
 ;	in the form of a string of digits.
@@ -172,6 +166,10 @@ _convert:
 
 	LODSB							; AL = multiplicand
 	MOV		num_char, EAX
+	CMP		num_char, 48
+	JB		_error
+	CMP		num_char, 57
+	JA		_error
 	MOV		EAX, num_int
 	MOV		EBX, 10
 	IMUL	EBX						; 10 * num_int
@@ -181,9 +179,17 @@ _convert:
 
 	LOOP	_convert
 	
+	CALL	WriteInt
+	JMP		_out
 
+_error:
+	MOV		EDX, OFFSET error_mess
+	CALL	WriteString
+	MOV		num_int, 0
+	JMP		_getNewString
+
+_out:
 ; Store this one value in a memory variable (output parameter, by reference). 
-
 	POP		EBP
 	RET		
 readVal	ENDP
