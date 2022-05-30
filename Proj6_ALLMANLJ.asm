@@ -26,6 +26,25 @@ INCLUDE Irvine32.inc
 ;
 ; returns: stringAddr = generated string address
 ; ---------------------------------------------------------------------------------
+mGetString MACRO 
+	LOCAL prompt1
+  .data
+	prompt1				BYTE	"Please enter a signed number: ",0
+  .code
+	PUSH	EDX
+	MOV		EDX, OFFSET prompt1
+	CALL	WriteString
+
+	MOV		EDX, OFFSET int_string		; EDX = address of int_string
+	MOV		ECX, SIZEOF	int_string		; ECX = int_string size
+	CALL	ReadString					; gets int_string
+
+	CALL	CrLf
+
+	CALL	WriteString					; TEST print
+
+	POP		EDX
+ENDM
 
 ; ---------------------------------------------------------------------------------
 ; Name: mDisplayString
@@ -50,9 +69,10 @@ intro1				BYTE	"Project 6: Fun with Low-Level I/O Procedures & Macros! - by Jess
 intro2				BYTE	"Input 10 signed decimal integers (positive or negative. or 0).",13,10
 					BYTE	"Each number must fit inside a 32 bit register. After you've input the raw numbers,",13,10
 					BYTE	"the program will display a list of the integers, their sum, and their truncated mean.",13,10,0
-prompt1				BYTE	"Please enter a signed number: ",0
+
 error_mess			BYTE	"ERROR: You did not enter an signed number or your number was too big.",13,10
 					BYTE	"Please try again: ",13,10,0
+int_string			BYTE	12 DUP(0)
 
 .code
 main PROC
@@ -69,6 +89,8 @@ main PROC
 ; Display the integers, their sum, and their truncated average.
 ; ** Your ReadVal will be called within the loop in main. 
 ; **  - Do not put your counted loop within ReadVal.
+
+	CALL	readVal
 
 	Invoke ExitProcess,0	; exit to operating system
 main ENDP
@@ -96,7 +118,7 @@ introduction PROC
 	RET		8
 introduction ENDP
 ; ---------------------------------------------------------------------------------
-; Name: ReadVal
+; Name: readVal
 ;
 ; Invokes the mGetString macro to get user input, converts the string of ascii 
 ;	digits to its numeric value representation, and stores this one value in a 
@@ -110,10 +132,13 @@ introduction ENDP
 ;
 ; returns: 
 ; ---------------------------------------------------------------------------------
-
+readVal PROC
+	PUSH	EBP						; Step 1) Preserve EBP
+	MOV		EBP, ESP				; Step 2) Assign static stack-frame pointer
 ; Read the user's input as a string and convert the string to numeric form.
 ; - Invoke the mGetString macro (see parameter requirements above) to get user input 
 ;	in the form of a string of digits.
+	mGetString 
 
 ; Convert (using string primitives LODSB and/or STOSB) the string of ascii digits to 
 ; its numeric value representation (SDWORD), validating the user’s input is a valid 
@@ -126,7 +151,9 @@ introduction ENDP
 
 ; Store this one value in a memory variable (output parameter, by reference). 
 
-
+	POP		EBP
+	RET		
+readVal	ENDP
 ; ---------------------------------------------------------------------------------
 ; Name: WriteVal
 ;
