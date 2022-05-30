@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 08:30:26
+Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
 <Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALL  Page 1 - 1
 
 
@@ -9,6 +9,7 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 08:30:26
 				; OSU email address: allmanlj@oregonstate.edu
 				; Course number/section:   CS271 Section 400
 				; Project Number: 6                Due Date: 6/5/2022
+				; TODO: Update description
 				; Description: 
 
 
@@ -55,6 +56,7 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 08:30:26
 	   4C 61 50 6F 72
 	   74 65 0D 0A 0D
 	   0A 00
+				; TODO: Update description
  00000057 44 45 53 43 52	intro2				BYTE	"DESCRIPTION LINE 1",13,10
 	   49 50 54 49 4F
 	   4E 20 4C 49 4E
@@ -72,17 +74,40 @@ Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 08:30:26
  00000000			.code
  00000000			main PROC
 
-				; (insert executable instructions here)
+ 00000000  68 00000000 R		PUSH	OFFSET intro1
+ 00000005  68 00000057 R		PUSH	OFFSET intro2
+ 0000000A  E8 00000007			CALL	introduction
 
 					Invoke ExitProcess,0	; exit to operating system
- 00000000  6A 00	   *	    push   +000000000h
- 00000002  E8 00000000 E   *	    call   ExitProcess
- 00000007			main ENDP
+ 0000000F  6A 00	   *	    push   +000000000h
+ 00000011  E8 00000000 E   *	    call   ExitProcess
+ 00000016			main ENDP
 
-				; (insert additional procedures here)
+				; ---------------------------------------------------------------------
+				; Name: introduction
+				;
+				; Introduces the user to the program and displays the title, programmer's name
+				;	and description
+				;
+				; Preconditions: intro1 and intro2 exist and have been pushed onto stack
+				;
+				; Postconditions: EDX changed
+				; --------------------------------------------------------------------
+ 00000016			introduction PROC
+ 00000016  55				PUSH	EBP						; Step 1) Preserve EBP
+ 00000017  8B EC			MOV		EBP, ESP				; Step 2) Assign static stack-frame pointer
+ 00000019  8B 55 0C			MOV     EDX, [EBP+12]   
+ 0000001C  E8 00000000 E		CALL    WriteString				; print intro1
+ 00000021  8B 55 08			MOV     EDX, [EBP+8]   
+ 00000024  E8 00000000 E		CALL    WriteString				; print intro2
+ 00000029  E8 00000000 E		CALL	CrLf
+					
+ 0000002E  5D				POP		EBP
+ 0000002F  C2 0008			RET		8
+ 00000032			introduction ENDP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 08:30:26
+Microsoft (R) Macro Assembler Version 14.29.30142.1	    05/30/22 10:23:04
 <Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALL  Symbols 2 - 1
 
 
@@ -177,7 +202,7 @@ Segments and Groups:
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
 _DATA  . . . . . . . . . . . . .	32 Bit	 00000094 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000007 Para	  Public  'CODE'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000032 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -284,7 +309,8 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000007 Public STDCALL
+introduction . . . . . . . . . .	P Near	 00000016 _TEXT	Length= 0000001C Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 00000000 _TEXT	Length= 00000016 Public STDCALL
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
