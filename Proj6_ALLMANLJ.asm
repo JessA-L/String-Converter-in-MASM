@@ -26,13 +26,10 @@ INCLUDE Irvine32.inc
 ;
 ; returns: stringAddr = generated string address
 ; ---------------------------------------------------------------------------------
-mGetString MACRO 
-;	LOCAL prompt1
-;  .data
-;	prompt1				BYTE	"Please enter a signed number: ",0
-;  .code
+mGetString MACRO prompt:REQ
+
 	PUSH	EDX
-	MOV		EDX, OFFSET prompt1
+	MOV		EDX, prompt
 	CALL	WriteString
 
 	MOV		EDX, OFFSET int_string		; EDX = address of int_string
@@ -71,7 +68,7 @@ error_mess			BYTE	"ERROR: You did not enter an signed number or your number was 
 int_string			BYTE	21 DUP(0)
 s_len				DWORD	?
 num_int				SDWORD	0
-num_char			SDWORD	?
+num_char			BYTE	?
 
 .code
 main PROC
@@ -89,6 +86,7 @@ main PROC
 ; ** Your ReadVal will be called within the loop in main. 
 ; **  - Do not put your counted loop within ReadVal.
 
+	PUSH	OFFSET prompt1
 	CALL	readVal
 
 	Invoke ExitProcess,0	; exit to operating system
@@ -132,6 +130,7 @@ introduction ENDP
 ; returns: 
 ; ---------------------------------------------------------------------------------
 readVal PROC
+
 	PUSH	EBP						
 	MOV		EBP, ESP				
 
@@ -139,7 +138,7 @@ _getNewString:
 ; Read the user's input as a string and convert the string to numeric form.
 ; - Invoke the mGetString macro (see parameter requirements above) to get user input 
 ;	in the form of a string of digits.
-	mGetString 
+	mGetString [EBP+8]
 	CALL	CrLf
 
 ; Convert (using string primitives LODSB and/or STOSB) the string of ascii digits to 
@@ -164,16 +163,19 @@ _convert:
 ;    else:
 ;      break
 
-	LODSB							; AL = multiplicand
-	MOV		num_char, EAX
+; CONVERT loop two branches to handle sign : sub or add to zero
+
+	LODSB							
+	MOV		num_char, AL
 	CMP		num_char, 48
-	JB		_error
+	JL		_error
 	CMP		num_char, 57
-	JA		_error
+	JG		_error
 	MOV		EAX, num_int
 	MOV		EBX, 10
 	IMUL	EBX						; 10 * num_int
-	ADD		EAX, num_char
+	MOVZX	EDX, num_char
+	ADD		EAX, EDX
 	SUB		EAX, 48
 	MOV		num_int, EAX
 
@@ -191,7 +193,7 @@ _error:
 _out:
 ; Store this one value in a memory variable (output parameter, by reference). 
 	POP		EBP
-	RET		
+	RET		4
 readVal	ENDP
 ; ---------------------------------------------------------------------------------
 ; Name: WriteVal
