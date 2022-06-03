@@ -1,11 +1,10 @@
 TITLE Project 6: Low-Level I/O Procedures & Macros     (Proj6_ALLMANLJ.asm)
 
 ; Author: Jessica-Allman-LaPorte
-; Last Modified: 5/30/2022
+; Last Modified: 6/3/2022
 ; OSU email address: allmanlj@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: 6/5/2022
-; TODO: Update description
 ; Description: Program includes proceedures that user input as a string of ascii characters and converts
 ;				the string to numeric form and then converts back to print the ASCII representation of 
 ;				the value to the output. Includes a test program within main that fills an array of 
@@ -70,6 +69,10 @@ intro2				BYTE	"Input 10 signed decimal integers (positive or negative. or 0).",
 					BYTE	"the program will display a list of the integers, their sum, and their truncated mean.",13,10,0
 prompt1				BYTE	"Please enter a signed number: ",0
 error_mess			BYTE	"ERROR: You did not enter a signed number or your number was too big.",13,10,0
+display_string		BYTE	"You entered the following numbers:",13,10,0
+sum_string			BYTE	"The sum of these numbers is: ",13,10,0
+average_string		BYTE	"The truncated average is: ",13,10,0
+goodbye_string		BYTE	"Goodbye!",13,10,0
 num_string			BYTE	21 DUP(0)
 int_array			DWORD	ARRAYSIZE DUP(?)
 ; TODO: Write prompts for test program in main
@@ -104,6 +107,10 @@ _fillLoop:
 
 ; TODO: Display the truncated average of the integers
 
+; Display goodbye message
+	PUSH	OFFSET goodbye_string
+	CALL	goodbye
+
 	Invoke ExitProcess,0			; exit to operating system
 main ENDP
 
@@ -116,6 +123,8 @@ main ENDP
 ; Preconditions: intro1 and intro2 exist and have been pushed onto stack
 ;
 ; Postconditions: EDX changed
+;
+; Recieves: intro1 and intro2 strings
 ; --------------------------------------------------------------------
 introduction PROC
 	PUSH	EBP						; Step 1) Preserve EBP
@@ -149,45 +158,66 @@ introduction ENDP
 ; returns: an integer in EAX
 ; ---------------------------------------------------------------------------------
 ReadVal PROC
-	LOCAL s_len:DWORD, num_char:BYTE, num_int:SDWORD
+	LOCAL s_len:DWORD, num_char:BYTE, num_int:SDWORD, sign:BYTE
 	PUSH	ECX
+;	MOV		sign, 0					; sign = 0 (default; positive integer)
 	MOV		num_int, 0				;  num_int = 0
+
 
 _getNewString:
 ; Read the user's input as a string and convert the string to numeric form.
 ;  get num_string (uset input of ascii chars)	
 	mGetString [EBP+8], s_len, [EBP+16], [EBP+20]		
 	CALL	CrLf
+	MOV		sign, 0					; sign = 0 (default; positive integer)
 
 	CLD								; sets direction flag (forward)
 	MOV		EBX, 10
 	MOV		ECX, s_len
 	MOV		ESI, [EBP+16]			; address of num_string
-_convert:
-
 ; TODO: If the user enters non-digits other than something which will indicate sign 
 ;		(e.g. ‘+’ or ‘-‘), or the number is too large for 32-bit registers, 
 ;		an error message should be displayed and the number should be discarded.
 ; TODO: CONVERT loop two branches to handle sign : sub or add to zero
 
+	MOV		AL, [ESI]
+; if first character != 45(-), skip to check for +
+	CMP		AL, 45
+	JNE		_checkPlus
+	INC		sign					; sign = 1 (negative integer)
+	LODSB
+	JMP		_loopAgain
+; if first character != 43(+), skip to loop
+_checkPlus:
+	CMP		AL, 43
+	JNE		_convert 
+
+	LODSB
+	JMP		_loopAgain
+
+_convert:
 	LODSB							;  for num_char in num_string:
 	MOV		num_char, AL
+
 	CMP		num_char, 48
 	JL		_error
 	CMP		num_char, 57
 	JG		_error					;    if 48 <= num_char <= 57:
 	MOV		EAX, num_int			;      num_int = 10 * num_int + (num_char - 48)
-	IMUL	EBX						; 10 * num_int
+	IMUL	EBX						;		(10 * num_int)
 	MOVZX	EDX, num_char
+	JO		_error
 	ADD		EAX, EDX
+	JO		_error
+
+	; 2147483647  -2147483648 
+_notTooBig:
 	SUB		EAX, 48					; EAX = integer converted from string
 	MOV		num_int, EAX
+;	JO		_error
+_loopAgain:
   LOOP	_convert
-	
-	CALL	WriteInt				; TEST: prints integer after user input
-	CALL	CrLf					; TEST: delete this line later
-
-	JMP		_out
+	JMP		_checkSign
 									
 _error:								;    else:
 	MOV		EDX, [EBP+12]			;		print error message
@@ -195,12 +225,37 @@ _error:								;    else:
 	MOV		num_int, 0				;		num_int = 0
 	JMP		_getNewString			;		get another num_string
 
+;_sizeError:				
+; check for sign first
+;	CMP		num_char, 56
+;	JL		_notTooBig
+;	JG		_error
+;	CMP		sign, 0
+; if pos and last number 8, too big; if neg and last number 8, not too big/small
+;	JNE		_notTooBig
+;	JMP		_error
+
+; check sign: if negative, subtract from zero
+_checkSign:
+	CMP		sign, 1
+	JZ		_negInt
+	JMP		_out
+_negInt:
+	MOV		EAX, 0
+	SUB		EAX, num_int
+	MOV		num_int, EAX
+
 ; Store this one value in a memory variable (output parameter, by reference). 
-_out:
+_out:	
 	MOV		EAX, num_int
+		
+	CALL	WriteInt				; TEST: prints integer after user input
+	CALL	CrLf					; TEST: delete this line later
+
 	POP		ECX
 	RET		16
 ReadVal	ENDP
+
 ; ---------------------------------------------------------------------------------
 ; Name: WriteVal
 ;
@@ -221,4 +276,26 @@ ReadVal	ENDP
 ; Invoke the mDisplayString macro to print the ASCII representation of the SDWORD value 
 ;	to the output.
 
+; ---------------------------------------------------------------------
+; Name: goodbye
+;
+; Displays farewell message
+;
+; Preconditions: goodbye_string exists and has been pushed onto stack
+;
+; Postconditions: EDX changed
+
+; receives: goodbye_string = string
+; --------------------------------------------------------------------
+goodbye PROC
+	PUSH	EBP						; Step 1) Preserve EBP
+	MOV		EBP, ESP				; Step 2) Assign static stack-frame pointer
+
+	MOV     EDX, [EBP+8]   
+	CALL    WriteString				; print goodbye_string
+	CALL	CrLf
+	
+	POP		EBP
+	RET		8
+goodbye ENDP
 END main
