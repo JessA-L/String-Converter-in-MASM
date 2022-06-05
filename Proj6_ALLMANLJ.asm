@@ -68,7 +68,7 @@ _write:
 
 ENDM
 
-ARRAYSIZE = 10							
+ARRAYSIZE = 3 ;todo							
 
 .data
 
@@ -79,13 +79,14 @@ intro2				BYTE	"Input 10 signed decimal integers (positive or negative. or 0).",
 prompt1				BYTE	"Please enter a signed number: ",0
 error_mess			BYTE	"ERROR: You did not enter a signed number or your number was too big.",13,10,0
 display_string		BYTE	"You entered the following numbers:",13,10,0
-sum_string			BYTE	"The sum of these numbers is: ",13,10,0
+sum_string			BYTE	"The sum of these numbers is: ",0
 average_string		BYTE	"The truncated average is: ",13,10,0
 goodbye_string		BYTE	"Goodbye!",13,10,0
 num_string			BYTE	21 DUP(0)
 digit_array			BYTE	ARRAYSIZE DUP(?)
 digit_array2		BYTE	ARRAYSIZE DUP(?)
 int_array			DWORD	ARRAYSIZE DUP(?)
+sum					SDWORD	?
 
 
 .code
@@ -113,13 +114,27 @@ _fillLoop:
 	LOOP	_fillLoop
 
 ; TODO: Display the integers
-	PUSH	OFFSET digit_array2		; [EBP+12]
-	PUSH	OFFSET digit_array		; [EBP+8]
-	CALL	WriteVal
+
 
 ; TODO: Display the sum of the integers
 
+	MOV		ESI, OFFSET int_array
+	MOV		ECX, ARRAYSIZE
 
+_sumLoop:
+	MOV		EAX, [ESI]		; arr[index]
+	ADD		sum, EAX
+	ADD		ESI, 4
+
+  LOOP	_sumLoop
+	
+	MOV		EDX, OFFSET sum_string
+	CALL	WriteString
+
+	MOV		EAX, sum
+	PUSH	OFFSET digit_array2		; [EBP+12]
+	PUSH	OFFSET digit_array		; [EBP+8]
+	CALL	WriteVal
 ; TODO: Display the truncated average of the integers
 
 ; Display goodbye message
