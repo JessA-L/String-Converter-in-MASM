@@ -50,16 +50,25 @@ ENDM
 ; Print the string stored in a specified memory location using WriteString.
 ;
 ; Preconditions: 
-;	do not use eax, ecx, esi as arguments
-;	stringAddress has been pushed to stack
 ;
 ; Receives:
-;	stringAddress - contains string to be printed
+;	string array
 ;
 ; returns: none
 ; ---------------------------------------------------------------------------------
+mDisplayString MACRO array:REQ
 
-ARRAYSIZE = 3							; TEST: change back to 10
+	CMP		sign, 0
+	JZ		_write
+	MOV		AL, 45
+	CALL	WriteChar
+_write:
+	MOV		EDX, array
+	CALL	WriteString
+
+ENDM
+
+ARRAYSIZE = 10							
 
 .data
 
@@ -74,8 +83,10 @@ sum_string			BYTE	"The sum of these numbers is: ",13,10,0
 average_string		BYTE	"The truncated average is: ",13,10,0
 goodbye_string		BYTE	"Goodbye!",13,10,0
 num_string			BYTE	21 DUP(0)
+digit_array			BYTE	ARRAYSIZE DUP(?)
+digit_array2		BYTE	ARRAYSIZE DUP(?)
 int_array			DWORD	ARRAYSIZE DUP(?)
-; TODO: Write prompts for test program in main
+
 
 .code
 main PROC
@@ -102,8 +113,12 @@ _fillLoop:
 	LOOP	_fillLoop
 
 ; TODO: Display the integers
+	PUSH	OFFSET digit_array2		; [EBP+12]
+	PUSH	OFFSET digit_array		; [EBP+8]
+	CALL	WriteVal
 
 ; TODO: Display the sum of the integers
+
 
 ; TODO: Display the truncated average of the integers
 
@@ -142,7 +157,7 @@ introduction ENDP
 ; Name: ReadVal
 ;
 ; Invokes the mGetString macro to get user input, converts the string of ascii 
-;	digits to its numeric value representation, and stores this one value in a 
+;	digit to its numeric value representation, and stores this one value in a 
 ;	EAX. 
 ;
 ; Preconditions: the array contains a string of ascii digits, mGetString macro works
@@ -160,9 +175,7 @@ introduction ENDP
 ReadVal PROC
 	LOCAL s_len:DWORD, num_char:BYTE, num_int:SDWORD, sign:BYTE
 	PUSH	ECX
-;	MOV		sign, 0					; sign = 0 (default; positive integer)
 	MOV		num_int, 0				;  num_int = 0
-
 
 _getNewString:
 ; Read the user's input as a string and convert the string to numeric form.
@@ -175,10 +188,6 @@ _getNewString:
 	MOV		EBX, 10
 	MOV		ECX, s_len
 	MOV		ESI, [EBP+16]			; address of num_string
-; TODO: If the user enters non-digits other than something which will indicate sign 
-;		(e.g. ‘+’ or ‘-‘), or the number is too large for 32-bit registers, 
-;		an error message should be displayed and the number should be discarded.
-; TODO: CONVERT loop two branches to handle sign : sub or add to zero
 
 	MOV		AL, [ESI]
 ; if first character != 45(-), skip to check for +
@@ -198,7 +207,6 @@ _checkPlus:
 _convert:
 	LODSB							;  for num_char in num_string:
 	MOV		num_char, AL
-
 	CMP		num_char, 48
 	JL		_error
 	CMP		num_char, 57
@@ -210,11 +218,10 @@ _convert:
 	ADD		EAX, EDX
 	JO		_error
 
-	; 2147483647  -2147483648 
 _notTooBig:
 	SUB		EAX, 48					; EAX = integer converted from string
 	MOV		num_int, EAX
-;	JO		_error
+
 _loopAgain:
   LOOP	_convert
 	JMP		_checkSign
@@ -224,16 +231,6 @@ _error:								;    else:
 	CALL	WriteString
 	MOV		num_int, 0				;		num_int = 0
 	JMP		_getNewString			;		get another num_string
-
-;_sizeError:				
-; check for sign first
-;	CMP		num_char, 56
-;	JL		_notTooBig
-;	JG		_error
-;	CMP		sign, 0
-; if pos and last number 8, too big; if neg and last number 8, not too big/small
-;	JNE		_notTooBig
-;	JMP		_error
 
 ; check sign: if negative, subtract from zero
 _checkSign:
@@ -262,19 +259,131 @@ ReadVal	ENDP
 ; Converts a numeric SDWORD value to a string of ASCII digits and invokes the 
 ; mDisplayString macro to print the ASCII representation of the value to the output.
 ;
-; Preconditions: 
+; Preconditions: EAX contains an integer
 ;
-; Postconditions: 
+; Postconditions: EBX, ECX, EDX changed
 ;
-; Receives:
+; Receives: EAX = the integer to be printed
 ;
-; returns: 
+; returns: none
 ; ---------------------------------------------------------------------------------
-
+WriteVal PROC
 ; Convert a numeric SDWORD value (input parameter, by value) to a string of ASCII digits.
+	LOCAL sign:BYTE, len:DWORD
+	PUSH	EAX
+	PUSH	EDI
+	PUSH	ESI
+	MOV		sign, 0				; sing = 0, will indicates sign of integer in EAX, default positive
+	MOV		ESI, [EBP+8]		; move digit_array into ESI
+
+; is the integer positive?
+	CMP		EAX, 0				
+								
+	JL		_negative
+	JMP		_howBig
+
+; if not, negate and change sign to 1
+_negative:
+	NEG		EAX					
+	MOV		sign, 1
+
+_howBig:
+; how large is the integer?
+; if > 1000000000
+	CMP		EAX, 1000000000
+	JGE		_len10
+;	 >= 100000000
+	CMP		EAX, 100000000
+	JGE		_len9
+;	 >= 10000000
+	CMP		EAX, 10000000
+	JGE		_len8
+;	 >= 1000000
+	CMP		EAX, 1000000
+	JGE		_len7
+;	 >= 100000
+	CMP		EAX, 100000
+	JGE		_len6
+;	 >= 10000
+	CMP		EAX, 10000
+	JGE		_len5
+;	 >= 1000
+	CMP		EAX, 1000
+	JGE		_len4
+;	 >= 100
+	CMP		EAX, 100
+	JGE		_len3
+;	 >= 10
+	CMP		EAX, 10
+	JGE		_len2
+; else:
+	MOV		len, 1
+	JMP		_initCounter
+_len10:
+	MOV		len, 10
+	JMP		_initCounter
+_len9:
+	MOV		len, 9
+	JMP		_initCounter
+_len8:
+	MOV		len, 8
+	JMP		_initCounter
+_len7:
+	MOV		len, 7
+	JMP		_initCounter
+_len6:
+	MOV		len, 6
+	JMP		_initCounter
+_len5:
+	MOV		len, 5
+	JMP		_initCounter
+_len4:
+	MOV		len, 4
+	JMP		_initCounter
+_len3:
+	MOV		len, 3
+	JMP		_initCounter
+_len2:
+	MOV		len, 2
+
+_initCounter:
+	MOV		ECX, len
+
+_fillArrayLoop:
+; divide integer by 10
+	MOV		EBX, 10					; divisor
+	MOV		EDX, 0
+	IDIV	EBX	
+; add 48 to remainder
+	ADD		EDX, 48
+	MOV		[ESI], EDX				; int into [ESI]
+	ADD		ESI, 1					; inc by type size
+
+  LOOP	_fillArrayLoop
+
+	MOV		ECX, len
+	MOV		ESI, [EBP+8]
+	ADD		ESI, ECX
+	DEC		ESI
+	MOV		EDI, [EBP+12]		; move digit_array2 into EDI
+
+; Reverse string
+_revLoop:
+    STD
+    LODSB
+    CLD
+    STOSB
+   LOOP   _revLoop
 
 ; Invoke the mDisplayString macro to print the ASCII representation of the SDWORD value 
 ;	to the output.
+	mDisplayString [EBP+12]
+	CALL	CrLf
+	POP		ESI
+	POP		EDI
+	POP		EAX
+	RET		12
+WriteVal ENDP
 
 ; ---------------------------------------------------------------------
 ; Name: goodbye
@@ -284,7 +393,7 @@ ReadVal	ENDP
 ; Preconditions: goodbye_string exists and has been pushed onto stack
 ;
 ; Postconditions: EDX changed
-
+;
 ; receives: goodbye_string = string
 ; --------------------------------------------------------------------
 goodbye PROC
